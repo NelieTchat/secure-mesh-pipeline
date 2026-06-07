@@ -32,3 +32,22 @@ module "ecr" {
   image_retention_count   = 10
   github_actions_role_arn = module.iam.github_actions_role_arn
 }
+
+module "eks" {
+  source = "./modules/eks"
+
+  cluster_name    = local.cluster_name
+  cluster_version = "1.29"
+  environment     = var.environment
+  vpc_id          = module.vpc.vpc_id
+  private_subnets = module.vpc.private_subnet_ids
+
+  node_group_instance_types = ["t3.medium"]
+  node_group_desired_size   = 2
+  node_group_min_size       = 1
+  node_group_max_size       = 4
+
+  node_role_arn = module.iam.eks_node_role_arn
+
+  depends_on = [module.vpc, module.iam]
+}
