@@ -22,3 +22,13 @@ module "iam" {
   github_org   = "NelieTchat"
   github_repo  = "secure-mesh-pipeline"
 }
+
+module "ecr" {
+  source = "./modules/ecr"
+
+  cluster_name            = local.cluster_name
+  environment             = var.environment
+  repositories            = ["frontend", "backend", "api-service"]
+  image_retention_count   = 10
+  github_actions_role_arn = module.iam.github_actions_role_arn
+}
