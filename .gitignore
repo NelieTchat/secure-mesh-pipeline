@@ -18,3 +18,6 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Personal study notes
+PROJECT-NOTES.md
