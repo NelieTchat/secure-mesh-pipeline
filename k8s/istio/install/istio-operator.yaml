@@ -1,0 +1,25 @@
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  name: secure-mesh-pipeline
+  namespace: istio-system
+spec:
+  profile: default
+
+  meshConfig:
+    # Require mTLS for all service-to-service communication
+    defaultConfig:
+      proxyMetadata: {}
+    enablePrometheusMerge: true #expose service in a format Prometheus can scrape.
+
+  values:
+    global:
+      # Proxy resource limits — prevent Envoy sidecars from starving app containers
+      proxy:
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi

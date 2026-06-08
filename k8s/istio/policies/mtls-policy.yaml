@@ -1,0 +1,54 @@
+# PeerAuthentication — enforces mTLS for all services in the mesh
+# This is a cluster-wide policy. Every service must use mTLS.
+# No plain text traffic allowed between pods.
+
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: istio-system
+spec:
+  mtls: # every namespace must use mTLS. NO EXCEPTIONS
+    mode: STRICT
+
+---
+# AuthorizationPolicy — controls which services can talk to each other
+# frontend can call backend. backend can call api-service.
+# Nothing else is allowed.
+
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: backend-policy
+  namespace: backend
+spec:
+  selector:
+    matchLabels:
+      app: backend
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/frontend/sa/frontend"
+    - to:
+        - operation:
+            methods: ["GET", "POST"]
+
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: api-service-policy
+  namespace: api-service
+spec:
+  selector:
+    matchLabels:
+      app: api-service
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/backend/sa/backend"
+    - to:
+        - operation:
+            methods: ["GET", "POST"]
