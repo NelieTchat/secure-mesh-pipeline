@@ -20,3 +20,14 @@ variable "cluster_name" {
   type        = string
   default     = "secure-mesh-pipeline"
 }
+
+variable "github_org" {
+  description = "GitHub organization or username for OIDC trust"
+  type        = string
+}
+
+variable "github_repo" {
+  description = "GitHub repository name for OIDC trust"
+  type        = string
+  default     = "secure-mesh-pipeline"
+}

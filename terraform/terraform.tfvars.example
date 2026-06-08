@@ -1,0 +1,12 @@
+# Copy this file to terraform.tfvars and fill in your values
+# cp terraform.tfvars.example terraform.tfvars
+
+aws_region   = "us-east-1"
+environment  = "dev"
+cluster_name = "secure-mesh-pipeline"
+
+# Your GitHub username or organization
+github_org  = "your-github-username"
+
+# Your GitHub repository name
+github_repo = "secure-mesh-pipeline"
