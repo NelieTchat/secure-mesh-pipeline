@@ -1,0 +1,22 @@
+# ArgoCD Installation
+# Apply with: kubectl apply -n argocd -f argocd-install.yaml
+#
+# This references the official ArgoCD install manifest directly.
+# In production you would pin to a specific version tag.
+#
+# WHY ARGOCD:
+# ArgoCD is a declarative GitOps controller for Kubernetes.
+# It continuously reconciles the cluster state with Git.
+# No manual kubectl apply needed after initial setup.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cmd-params-cm
+  namespace: argocd
+data:
+  # Run ArgoCD server without TLS — we terminate TLS at the load balancer
+  server.insecure: "true" # it means Argocd itself doens't handle TLS. It's handled by the LoadBalancer or Ingress in front ot it.
+
+  # How often ArgoCD checks Git for changes (default 3 minutes)
+  timeout.reconciliation: "180s" # the cluster updates every 3 min

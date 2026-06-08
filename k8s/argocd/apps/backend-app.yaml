@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: backend
+  namespace: argocd
+spec:
+  project: default
+
+  source: # where ArgoCD reads from (git)
+    repoURL: https://github.com/your-github-org/secure-mesh-pipeline 
+    targetRevision: HEAD
+    path: k8s/apps/backend
+
+  destination: # where ArgoCD deploys to k8s (cluster and namespace)
+    server: https://kubernetes.default.svc
+    namespace: backend
+
+  syncPolicy:
+    automated:
+      prune: true # Git is the only source of truth, deleted from Git = deleted from cluster
+      selfHeal: true #manual changes to the cluster get overwritten, no configuration drift ever
+    syncOptions:
+      - CreateNamespace=true # no need to manually create namespaces first, ArgoCD handles it
