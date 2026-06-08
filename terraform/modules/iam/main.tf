@@ -66,6 +66,19 @@ resource "aws_iam_role_policy" "github_actions_ecr" {
           "eks:DescribeCluster"
         ]
         Resource = "arn:aws:eks:${var.aws_region}:${data.aws_caller_identity.current.account_id}:cluster/${var.cluster_name}"
+      },
+      {
+        Sid    = "TrivyReportsS3Upload"
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          "arn:aws:s3:::${var.cluster_name}-trivy-reports",
+          "arn:aws:s3:::${var.cluster_name}-trivy-reports/*"
+        ]
       }
     ]
   })

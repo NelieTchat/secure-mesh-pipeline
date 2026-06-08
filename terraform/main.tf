@@ -51,3 +51,40 @@ module "eks" {
 
   depends_on = [module.vpc, module.iam]
 }
+
+# S3 bucket for Trivy scan reports — permanent audit trail
+resource "aws_s3_bucket" "trivy_reports" {
+  bucket = "${local.cluster_name}-trivy-reports"
+
+  tags = {
+    Name    = "${local.cluster_name}-trivy-reports"
+    Purpose = "CVE scan report storage"
+  }
+}
+
+resource "aws_s3_bucket_versioning" "trivy_reports" {
+  bucket = aws_s3_bucket.trivy_reports.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "trivy_reports" {
+  bucket = aws_s3_bucket.trivy_reports.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "aws:kms"
+    }
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "trivy_reports" {
+  bucket = aws_s3_bucket.trivy_reports.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
