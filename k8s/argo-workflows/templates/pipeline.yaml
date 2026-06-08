@@ -1,0 +1,133 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: secure-pipeline
+  namespace: argo
+spec:
+  entrypoint: pipeline
+  serviceAccountName: argo-workflow
+  arguments:
+    parameters:
+      - name: image-tag
+        value: "latest"
+      - name: service-name
+        value: "backend"
+  volumes:
+    - name: image-store
+      emptyDir: {}
+  templates:
+    - name: pipeline
+      dag:
+        tasks:
+          - name: build-image
+            template: build-image
+          - name: scan-image
+            template: scan-image
+            dependencies: [build-image]
+          - name: parse-results
+            template: parse-results
+            dependencies: [scan-image]
+          - name: push-to-ecr
+            template: push-to-ecr
+            dependencies: [parse-results]
+          - name: notify
+            template: notify
+            dependencies: [push-to-ecr]
+
+    - name: build-image
+      container:
+        image: docker:24-dind
+        command: [sh, -c]
+        args:
+          - |
+            docker build -t ${SERVICE_NAME}:${IMAGE_TAG} .
+            docker save ${SERVICE_NAME}:${IMAGE_TAG} -o /tmp/image.tar
+        env:
+          - name: SERVICE_NAME
+            value: "{{workflow.parameters.service-name}}"
+          - name: IMAGE_TAG
+            value: "{{workflow.parameters.image-tag}}"
+        volumeMounts:
+          - name: image-store
+            mountPath: /tmp
+
+    - name: scan-image
+      container:
+        image: aquasec/trivy:latest
+        command: [sh, -c]
+        args:
+          - |
+            trivy image \
+              --input /tmp/image.tar \
+              --format json \
+              --output /tmp/trivy-results.json \
+              --exit-code 0
+        volumeMounts:
+          - name: image-store
+            mountPath: /tmp
+
+    - name: parse-results
+      container:
+        image: python:3.11-slim
+        command: [sh, -c]
+        args:
+          - |
+            python3 /scripts/parse_results.py \
+              --input /tmp/trivy-results.json \
+              --threshold 0
+        volumeMounts:
+          - name: image-store
+            mountPath: /tmp
+          - name: scripts
+            mountPath: /scripts
+
+    - name: push-to-ecr
+      container:
+        image: amazon/aws-cli:latest
+        command: [sh, -c]
+        args:
+          - |
+            aws ecr get-login-password --region ${AWS_REGION} | \
+              docker login --username AWS --password-stdin ${ECR_REGISTRY}
+            docker load -i /tmp/image.tar
+            docker tag ${SERVICE_NAME}:${IMAGE_TAG} ${ECR_REGISTRY}/${SERVICE_NAME}:${IMAGE_TAG}
+            docker push ${ECR_REGISTRY}/${SERVICE_NAME}:${IMAGE_TAG}
+        env:
+          - name: AWS_REGION
+            value: "us-east-1"
+          - name: ECR_REGISTRY
+            valueFrom:
+              secretKeyRef:
+                name: ecr-credentials
+                key: registry-url
+          - name: SERVICE_NAME
+            value: "{{workflow.parameters.service-name}}"
+          - name: IMAGE_TAG
+            value: "{{workflow.parameters.image-tag}}"
+        volumeMounts:
+          - name: image-store
+            mountPath: /tmp
+
+    - name: notify
+      container:
+        image: python:3.11-slim
+        command: [sh, -c]
+        args:
+          - |
+            python3 /scripts/notify.py \
+              --service ${SERVICE_NAME} \
+              --tag ${IMAGE_TAG} \
+              --status success
+        env:
+          - name: SERVICE_NAME
+            value: "{{workflow.parameters.service-name}}"
+          - name: IMAGE_TAG
+            value: "{{workflow.parameters.image-tag}}"
+          - name: SLACK_WEBHOOK
+            valueFrom:
+              secretKeyRef:
+                name: slack-credentials
+                key: webhook-url
+        volumeMounts:
+          - name: scripts
+            mountPath: /scripts
