@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: api-service
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/your-github-org/secure-mesh-pipeline
+    targetRevision: HEAD
+    path: k8s/apps/api-service
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: api-service
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
