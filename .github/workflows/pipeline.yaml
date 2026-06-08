@@ -1,0 +1,58 @@
+name: Secure Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+  SERVICE_NAME: backend
+
+jobs:
+  trigger-pipeline:
+    name: Trigger Argo Workflow
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write # tells GitHub to generate an OIDC token  without it, GitHub Actions can't request 
+      contents: read # the token and the AWS authentication fails completely
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials via OIDC # generates a short-lived token, sendsit against the OIDC provider we created in the IAM module ane returns temporary creds
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }} # is the ARN of the GitHub Actions role we created in Terraform and stored as a GitHub secret.
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --region ${{ env.AWS_REGION }} \
+            --name ${{ secrets.EKS_CLUSTER_NAME }}
+
+      - name: Submit Argo Workflow
+        run: |
+          kubectl create -f - <<EOF
+          apiVersion: argoproj.io/v1alpha1
+          kind: Workflow
+          metadata:
+            generateName: secure-pipeline-
+            namespace: argo
+          spec:
+            workflowTemplateRef:
+              name: secure-pipeline
+            arguments:
+              parameters:
+                - name: image-tag
+                  value: "${{ github.sha }}"
+                - name: service-name
+                  value: "${{ env.SERVICE_NAME }}"
+          EOF
