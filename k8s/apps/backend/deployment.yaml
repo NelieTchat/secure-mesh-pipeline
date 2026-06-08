@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: backend
+  labels:
+    app: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      serviceAccountName: backend # Here the ServiceAccount gets attached to the pod and Istio knows the identity of this pod
+      containers:
+        - name: backend
+          image: PLACEHOLDER/backend:latest # this is what ArgoCD updates when a new images is pushed and updates the image tag in git. ArgoCD sees this field change and then deploys the new version. This could be your ECR URL.
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          livenessProbe: # is the pod alive? if not, restart it
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe: # is the pod ready to receive traffic? if not, remove it from the load balancer
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
