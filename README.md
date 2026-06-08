@@ -142,4 +142,7 @@ Every commit to main triggers the full pipeline automatically.
 5. Approved image pushed to ECR
 6. ArgoCD detects Git change and deploys to EKS
 7. Istio enforces mTLS between all services
-````
+
+## Architecture
+
+![Architecture Diagram](docs/architecture.png)
