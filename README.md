@@ -5,31 +5,33 @@ security, GitOps deployment, and zero-trust service mesh on AWS EKS.
 
 ## Architecture
 
+```
 Developer Commit
-│
-▼
+       │
+       ▼
 GitHub Actions (CI Trigger)
-• Keyless AWS authentication via OIDC
-• Submits workflow to Argo
-│
-▼
+  • Keyless AWS authentication via OIDC
+  • Submits workflow to Argo
+       │
+       ▼
 Argo Workflows (Pipeline Orchestration)
-• Build container image
-• Scan with Trivy for CVEs
-• Python CVE parser enforces threshold
-• Push approved images to ECR
-│
-▼
+  • Build container image
+  • Scan with Trivy for CVEs
+  • Python CVE parser enforces threshold
+  • Push approved images to ECR
+       │
+       ▼
 ArgoCD (GitOps Deployment)
-• Watches Git for changes
-• Reconciles cluster to desired state
-• Self-healing, automated sync
-│
-▼
+  • Watches Git for changes
+  • Reconciles cluster to desired state
+  • Self-healing, automated sync
+       │
+       ▼
 EKS Cluster + Istio Service Mesh
-• mTLS between all services
-• AuthorizationPolicy enforcement
-• Full observability
+  • mTLS between all services
+  • AuthorizationPolicy enforcement
+  • Full observability
+```
 
 ## What This Project Demonstrates
 
@@ -57,19 +59,21 @@ EKS Cluster + Istio Service Mesh
 
 ## Project Structure
 
+```
 secure-mesh-pipeline/
-├── .github/workflows/     # GitHub Actions CI trigger
+├── .github/workflows/        # GitHub Actions CI trigger
 ├── k8s/
-│   ├── apps/              # Application manifests (frontend, backend, api-service)
-│   ├── argocd/            # ArgoCD install and Application objects
-│   ├── argo-workflows/    # Pipeline WorkflowTemplate and RBAC
-│   └── istio/             # Istio install and mTLS policies
+│   ├── apps/                 # Application manifests (frontend, backend, api-service)
+│   ├── argocd/               # ArgoCD install and Application objects
+│   ├── argo-workflows/       # Pipeline WorkflowTemplate and RBAC
+│   └── istio/                # Istio install and mTLS policies
 └── terraform/
-└── modules/
-├── vpc/           # Networking foundation
-├── iam/           # GitHub OIDC, node role, ArgoCD IRSA
-├── ecr/           # Container registries
-└── eks/           # Kubernetes cluster
+    └── modules/
+        ├── vpc/              # Networking foundation
+        ├── iam/              # GitHub OIDC, node role, ArgoCD IRSA
+        ├── ecr/              # Container registries
+        └── eks/              # Kubernetes cluster
+```
 
 ## Prerequisites
 
@@ -119,8 +123,6 @@ kubectl apply -f k8s/argo-workflows/templates/
 
 ### 6. Configure GitHub Secrets
 
-Add these secrets to your GitHub repository settings:
-
 | Secret | Value |
 |---|---|
 | AWS_ROLE_ARN | Output from terraform apply |
@@ -140,3 +142,4 @@ Every commit to main triggers the full pipeline automatically.
 5. Approved image pushed to ECR
 6. ArgoCD detects Git change and deploys to EKS
 7. Istio enforces mTLS between all services
+````
