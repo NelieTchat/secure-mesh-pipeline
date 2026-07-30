@@ -21,3 +21,6 @@ Thumbs.db
 
 # Personal study notes
 PROJECT-NOTES.md
+
+# AIOps Terraform
+observability/aiops/terraform/terraform.tfvars

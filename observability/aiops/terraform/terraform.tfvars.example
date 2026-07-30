@@ -1,0 +1,19 @@
+# Copy this file to terraform.tfvars and fill in your values
+# cp terraform.tfvars.example terraform.tfvars
+
+aws_region           = "us-east-1"
+environment          = "dev"
+cluster_name         = "secure-mesh-pipeline-dev"
+lambda_function_name = "aiops-alert-handler"
+dynamodb_table_name  = "aiops-incidents"
+
+# Get these values from Phase 1 terraform output
+# Run: cd terraform && terraform output
+vpc_id             = "your-vpc-id"
+private_subnet_ids = ["your-private-subnet-id-1", "your-private-subnet-id-2"]
+
+# Create Slack webhook secret first:
+# aws secretsmanager create-secret \
+#   --name aiops/slack-webhook \
+#   --secret-string "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+slack_webhook_secret_arn = "arn:aws:secretsmanager:us-east-1:YOUR_ACCOUNT_ID:secret:aiops/slack-webhook"
