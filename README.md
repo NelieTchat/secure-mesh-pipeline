@@ -146,3 +146,19 @@ Every commit to main triggers the full pipeline automatically.
 ## Architecture
 
 ![Architecture Diagram](docs/Architecture-diagram.png)
+
+## Phase 2 — Observability + AIOps
+
+Extends the platform with AI-powered incident response.
+
+| Component | Purpose |
+|---|---|
+| Prometheus | Scrapes metrics from all pods every 15 seconds |
+| AlertManager | Evaluates alert rules and fires webhooks |
+| Grafana | Visualizes metrics — CPU, memory, restarts, error rate |
+| AWS Lambda | Orchestrates the 20-step AIOps incident response pipeline |
+| Amazon Bedrock | Claude analyzes alert context and returns remediation steps |
+| DynamoDB | Stores incident history and complete audit trail |
+| AWS KMS | Encrypts all data at rest — GovCloud compliance |
+
+See [observability/README.md](observability/README.md) for full Phase 2 documentation.
