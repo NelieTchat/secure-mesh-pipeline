@@ -145,4 +145,4 @@ Every commit to main triggers the full pipeline automatically.
 
 ## Architecture
 
-![Architecture Diagram](docs/architecture.png)
+![Architecture Diagram](docs/Architecture-diagram.png)
