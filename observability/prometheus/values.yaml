@@ -1,0 +1,63 @@
+# Prometheus Helm Chart Values
+# Chart: kube-prometheus-stack
+# Installs: Prometheus, AlertManager, and Grafana together
+
+prometheus:
+  prometheusSpec:
+    # How long to keep metrics data
+    retention: 15d
+
+    # How often Prometheus scrapes metrics from pods
+    scrapeInterval: 15s
+
+    # Resource limits — prevent Prometheus from starving other pods
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+    # Automatically discover all ServiceMonitors in all namespaces
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+  config:
+    global:
+      resolve_timeout: 5m
+
+    route:
+      group_by: ["alertname", "namespace", "pod"]
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 12h
+      receiver: aiops-webhook
+
+    receivers:
+      - name: aiops-webhook
+        webhook_configs:
+          - url: "http://aiops-api-gateway.aiops.svc.cluster.local/alert"
+            send_resolved: true
+
+grafana:
+  enabled: true
+  adminPassword: "changeme-use-secret-in-production"
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi

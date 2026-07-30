@@ -1,0 +1,79 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: secure-mesh-pipeline-alerts
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  groups:
+    - name: pod-health
+      interval: 30s
+      rules:
+
+        # Pod is crash looping
+        - alert: CrashLoopDetected
+          expr: rate(kube_pod_container_status_restarts_total[10m]) * 60 > 0.5
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "Pod {{ $labels.pod }} is crash looping"
+            description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has restarted more than 5 times in 10 minutes."
+
+        # Pod is OOMKilled (out of memory)
+        - alert: OOMKillDetected
+          expr: kube_pod_container_status_last_terminated_reason{reason="OOMKilled"} == 1
+          for: 0m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "Pod {{ $labels.pod }} was OOMKilled"
+            description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} was killed due to out of memory."
+
+        # High CPU usage
+        - alert: CriticalCPU
+          expr: |
+            sum(rate(container_cpu_usage_seconds_total{container!=""}[5m])) by (pod, namespace)
+            /
+            sum(kube_pod_container_resource_limits{resource="cpu"}) by (pod, namespace)
+            > 0.85
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "High CPU usage on pod {{ $labels.pod }}"
+            description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is using more than 85% of its CPU limit for 5 minutes."
+
+        # High memory usage
+        - alert: MemoryPressure
+          expr: |
+            sum(container_memory_working_set_bytes{container!=""}) by (pod, namespace)
+            /
+            sum(kube_pod_container_resource_limits{resource="memory"}) by (pod, namespace)
+            > 0.90
+          for: 3m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "High memory usage on pod {{ $labels.pod }}"
+            description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is using more than 90% of its memory limit for 3 minutes."
+
+        # High error rate
+        - alert: HighErrorRate
+          expr: |
+            sum(rate(istio_requests_total{response_code=~"5.."}[2m])) by (destination_service_name, namespace)
+            /
+            sum(rate(istio_requests_total[2m])) by (destination_service_name, namespace)
+            > 0.05
+          for: 2m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "High error rate on {{ $labels.destination_service_name }}"
+            description: "Service {{ $labels.destination_service_name }} in namespace {{ $labels.namespace }} has more than 5% error rate for 2 minutes."
