@@ -137,3 +137,5 @@ aws secretsmanager create-secret \
   --name aiops/slack-webhook \
   --secret-string "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
 ```
+
+![Phase 2 Architecture](../docs/Observability-Architecture.png)
